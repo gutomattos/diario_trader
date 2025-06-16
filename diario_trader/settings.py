@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-ars)1_guzgt1$-&)s#ca-@6c4u=p--mssbkxj^i(x479udfaue
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['diario-trader.onrender.com', 'www.diario-trader.onrender.com']
+ALLOWED_HOSTS = ['.onrender.com']
 
 
 # Application definition
