@@ -1,0 +1,162 @@
+{% extends 'core/base.html' %}
+{% block title %}{{ titulo_dashboard }} | Diário do Trader{% endblock %}
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+{% block content %}
+
+<h3 class="mb-4">{{ titulo_dashboard }}</h3>
+
+<!-- Indicadores principais -->
+<div class="row mb-4">
+  <div class="col-md-4">
+    <div class="card text-center">
+      <div class="card-header">Acerto Total</div>
+      <div class="card-body"><h4>{% if percentual_acerto is not None %}{{ percentual_acerto|floatformat:2 }}%{% else %}-{% endif %}</h4></div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card text-center">
+      <div class="card-header">Payoff Total</div>
+      <div class="card-body"><h4>{% if payoff_total is not None %}{{ payoff_total|floatformat:2 }}{% else %}-{% endif %}</h4></div>
+    </div>
+  </div>
+</div>
+
+<div class="row mb-4">
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header">Acerto por Estratégia</div>
+      <div class="card-body">
+        <ul>
+          {% for est, pct in estrategia_acerto.items %}
+            <li><b>{{ est }}</b>: {% if pct is not None %}{{ pct|floatformat:2 }}%{% else %}-{% endif %}</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header">Payoff por Estratégia</div>
+      <div class="card-body">
+        <ul>
+          {% for est, po in estrategia_payoff.items %}
+            <li><b>{{ est }}</b>: {% if po is not None %}{{ po|floatformat:2 }}{% else %}-{% endif %}</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Gráficos -->
+<div class="row g-4">
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header">Estratégias x Lucro</div>
+      <div class="card-body">
+        <canvas id="estrategiaLucroChart"></canvas>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header">Ativo x Lucro</div>
+      <div class="card-body">
+        <canvas id="ativoLucroChart"></canvas>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header">Resultado por Mês</div>
+      <div class="card-body">
+        <canvas id="resultadoMesChart"></canvas>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header">Acumulado</div>
+      <div class="card-body">
+        <canvas id="acumuladoChart"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+var estrategiaLabels = {{ estrategia_labels|safe }};
+var estrategiaData = {{ estrategia_data|safe }};
+var ativoLabels = {{ ativo_labels|safe }};
+var ativoData = {{ ativo_data|safe }};
+var mesLabels = {{ mes_labels|safe }};
+var mesData = {{ mes_data|safe }};
+var acumuladoLabels = {{ acumulado_labels|safe }};
+var acumuladoData = {{ acumulado_data|safe }};
+
+// Estratégias x Lucro
+new Chart(document.getElementById('estrategiaLucroChart'), {
+  type: 'bar',
+  data: {
+    labels: estrategiaLabels,
+    datasets: [{
+      label: 'Lucro (R$)',
+      data: estrategiaData,
+      backgroundColor: '#1976d2',
+    }]
+  },
+  options: {responsive: true}
+});
+// Ativo x Lucro
+new Chart(document.getElementById('ativoLucroChart'), {
+  type: 'bar',
+  data: {
+    labels: ativoLabels,
+    datasets: [{
+      label: 'Lucro (R$)',
+      data: ativoData,
+      backgroundColor: '#1565c0',
+    }]
+  },
+  options: {responsive: true}
+});
+// Resultado por mês
+new Chart(document.getElementById('resultadoMesChart'), {
+  type: 'line',
+  data: {
+    labels: mesLabels,
+    datasets: [{
+      label: 'Lucro (R$)',
+      data: mesData,
+      borderColor: '#1976d2',
+      backgroundColor: 'rgba(25, 118, 210, 0.1)',
+      fill: true,
+      tension: 0.3
+    }]
+  },
+  options: {responsive: true}
+});
+// Acumulado
+new Chart(document.getElementById('acumuladoChart'), {
+  type: 'line',
+  data: {
+    labels: acumuladoLabels,
+    datasets: [
+      {
+        label: 'Acumulado',
+        data: acumuladoData,
+        borderColor: '#1976d2',
+        backgroundColor: 'rgba(25, 118, 210, 0.1)',
+        fill: false,
+        tension: 0.3
+      }
+    ]
+  },
+  options: {responsive: true}
+});
+</script>
+{% endblock %} 

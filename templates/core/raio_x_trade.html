@@ -1,0 +1,198 @@
+{% extends "core/base.html" %}
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  .dashboard-card {
+    background: linear-gradient(135deg, #1976d2 60%, #42a5f5 100%);
+    color: #fff;
+    box-shadow: 0 4px 24px 0 rgba(25, 118, 210, 0.18), 0 1.5px 6px 0 rgba(0,0,0,0.08);
+    border: none;
+  }
+  .dashboard-card .card-header {
+    background: transparent;
+    border-bottom: none;
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: #e3eafc;
+    letter-spacing: 0.5px;
+  }
+  .dashboard-card .card-body h4, .dashboard-card .card-body {
+    color: #fff;
+  }
+  .grafico-bg {
+    background: #fff !important;
+    border-radius: 0 0 0.5rem 0.5rem;
+    padding: 1.5rem 1rem 1rem 1rem;
+  }
+</style>
+{% endblock %}
+{% block content %}
+<h3 class="mb-4">Raio X Trade</h3>
+<form method="get" class="mb-4">
+  <div class="row g-2 align-items-end">
+    <div class="col-md-4">
+      <label for="ativo" class="form-label">Filtrar por Ativo:</label>
+      <select name="ativo" id="ativo" class="form-select" onchange="this.form.submit()">
+        <option value="">Todos</option>
+        {% for a in ativos %}
+          <option value="{{ a }}" {% if a == ativo %}selected{% endif %}>{{ a }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-3">
+      <label for="data_inicio" class="form-label">Data Inicial:</label>
+      <input type="date" name="data_inicio" id="data_inicio" class="form-control" value="{{ data_inicio|default_if_none:'' }}">
+    </div>
+    <div class="col-md-3">
+      <label for="data_fim" class="form-label">Data Final:</label>
+      <input type="date" name="data_fim" id="data_fim" class="form-control" value="{{ data_fim|default_if_none:'' }}">
+    </div>
+    <div class="col-md-2 d-flex align-items-end">
+      <button type="submit" class="btn btn-primary w-100">Filtrar</button>
+    </div>
+  </div>
+</form>
+<div class="row mb-4">
+  <div class="d-flex gap-3">
+    <div class="dashboard-card card text-center flex-fill">
+      <div class="card-header">Quantidade de Trades</div>
+      <div class="card-body"><h4>{{ quantidade }}</h4></div>
+    </div>
+    <div class="dashboard-card card text-center flex-fill">
+      <div class="card-header">Taxa de Acerto (%)</div>
+      <div class="card-body"><h4>{{ taxa_acerto }}</h4></div>
+    </div>
+    <div class="dashboard-card card text-center flex-fill">
+      {% if rentabilidade_acumulada_percent is not None %}
+      <div class="card-header">Rentabilidade Acumulada (%)</div>
+      <div class="card-body"><h4>{{ rentabilidade_acumulada_percent }}</h4></div>
+      {% elif pts_total %}
+      <div class="card-header">Total de PTS</div>
+      <div class="card-body"><h4>{{ pts_total }}</h4></div>
+      {% endif %}
+    </div>
+    <div class="dashboard-card card text-center flex-fill">
+      <div class="card-header">Total de Lucro (R$)</div>
+      <div class="card-body"><h4>R$ {{ total_lucro_rs|floatformat:2 }}</h4></div>
+    </div>
+    <div class="dashboard-card card text-center flex-fill">
+      <div class="card-header">Média Cts por trade</div>
+      <div class="card-body"><h4>{% if media_cts is not None %}{{ media_cts }}{% else %}-{% endif %}</h4></div>
+    </div>
+  </div>
+</div>
+{% if grafico_labels and grafico_barras and grafico_linha and grafico_labels|length > 0 %}
+<!-- Novo card de estratégias e taxa de acerto -->
+<div class="row mb-4">
+  <div class="col-12">
+    <div class="card dashboard-card">
+      <div class="card-header">Estratégias Utilizadas e Taxa de Acerto</div>
+      <div class="card-body grafico-bg">
+        {% if estrategias_acerto %}
+        <div class="table-responsive">
+          <table class="table table-bordered table-hover align-middle mb-0">
+            <thead>
+              <tr>
+                <th>Estratégia</th>
+                <th>Taxa de Acerto (%)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for est, acerto in estrategias_acerto.items %}
+              <tr>
+                <td>{{ est }}</td>
+                <td>{{ acerto }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <p class="text-muted mb-0">Nenhuma estratégia encontrada para o filtro atual.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+<div class="row mb-4">
+  <div class="col-12">
+    <div class="card dashboard-card">
+      <div class="card-header">Trades e Rentabilidade Acumulada</div>
+      <div class="card-body grafico-bg">
+        <canvas id="grafico" width="900" height="300" style="min-height:300px;max-width:100%;"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const labels = JSON.parse(document.getElementById('grafico_labels').textContent);
+    const barras = JSON.parse(document.getElementById('grafico_barras').textContent);
+    const linha = JSON.parse(document.getElementById('grafico_linha').textContent);
+    const coresBarras = JSON.parse(document.getElementById('grafico_cores_barras').textContent);
+    const ctx = document.getElementById('grafico').getContext('2d');
+    const grafico = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    type: 'bar',
+                    label: '{{ ativo|default:"Todos" }}',
+                    data: barras,
+                    backgroundColor: coresBarras,
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1,
+                    yAxisID: 'y',
+                },
+                {
+                    type: 'line',
+                    label: 'Rentabilidade Acumulada (%)',
+                    data: linha,
+                    borderColor: 'rgba(25, 118, 210, 1)',
+                    backgroundColor: 'rgba(25, 118, 210, 0.2)',
+                    fill: false,
+                    yAxisID: 'y1',
+                    tension: 0.3
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            interaction: { mode: 'index', intersect: false },
+            stacked: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: { display: true, text: 'Lucro / PTS' },
+                    grid: { color: '#e3eafc' }
+                },
+                y1: {
+                    beginAtZero: true,
+                    position: 'right',
+                    grid: { drawOnChartArea: false },
+                    title: { display: true, text: 'Rentabilidade Acumulada (%)' },
+                    ticks: { color: '#1976d2' }
+                }
+            }
+        }
+    });
+});
+</script>
+{{ grafico_labels|json_script:"grafico_labels" }}
+{{ grafico_barras|json_script:"grafico_barras" }}
+{{ grafico_linha|json_script:"grafico_linha" }}
+{{ grafico_cores_barras|json_script:"grafico_cores_barras" }}
+{% else %}
+<div class="row mb-4">
+  <div class="col-12">
+    <div class="card dashboard-card">
+      <div class="card-header">Trades e Rentabilidade Acumulada</div>
+      <div class="card-body grafico-bg text-center">
+        <p class="text-muted mb-0">Nenhum dado para exibir o gráfico.</p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %} 

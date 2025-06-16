@@ -1,0 +1,10 @@
+{% extends "core/base.html" %}
+{% block content %}
+<h3>Excluir Retirada</h3>
+<p>Tem certeza que deseja excluir a retirada de <strong>{{ retirada.data|date:'d/m/Y' }}</strong> no valor de <strong>R$ {{ retirada.valor }}</strong>?</p>
+<form method="post">
+  {% csrf_token %}
+  <button type="submit" class="btn btn-danger">Confirmar Exclusão</button>
+  <a href="{% url 'retirada_list' %}" class="btn btn-secondary">Cancelar</a>
+</form>
+{% endblock %} 

@@ -1,0 +1,117 @@
+{% extends 'core/base.html' %}
+{% block title %}Meus Trades | Diário do Trader{% endblock %}
+{% block content %}
+<style>
+  .table td, .table th { padding: 0.3rem 0.3rem; }
+</style>
+<form method="post" action="/trades/deletar-multiplos/" id="formDeletarMultiplos">
+  {% csrf_token %}
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h3>Meus Trades</h3>
+    <div>
+      <button type="submit" class="btn btn-danger me-2" onclick="return confirm('Deseja realmente deletar os trades selecionados?')">Deletar Selecionados</button>
+      <a href="/trades/novo/" class="btn btn-primary">Novo Trade</a>
+    </div>
+  </div>
+  <table class="table table-striped table-bordered">
+    <thead class="table-primary">
+      <tr>
+        <th><input type="checkbox" id="selectAll"></th>
+        <th>Data Início</th>
+        <th>
+          Data Fim
+          <a href="?ordem=desc" class="ms-1 {% if ordem == 'desc' %}fw-bold text-primary{% endif %}">▼</a>
+          <a href="?ordem=asc" class="ms-1 {% if ordem == 'asc' %}fw-bold text-primary{% endif %}">▲</a>
+        </th>
+        <th>Ativo</th>
+        <th>Quant</th>
+        <th>Estratégia</th>
+        <th>Lado</th>
+        <th>Entrada</th>
+        <th>Saída</th>
+        <th>Lucro (R$)</th>
+        <th>Lucro (%)</th>
+        <th>PTS</th>
+        <th>Status</th>
+        <th>Descrição</th>
+        <th>Ações</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for trade in trades %}
+      <tr>
+        <td><input type="checkbox" name="selected_trades" value="{{ trade.id }}"></td>
+        <td>{{ trade.data_inicio }}</td>
+        <td>{{ trade.data_fim }}</td>
+        <td>{{ trade.ativo }}</td>
+        <td>{{ trade.quant }}</td>
+        <td>{{ trade.estrategia }}</td>
+        <td>{{ trade.lado }}</td>
+        <td>R$ {{ trade.preco_entrada }}</td>
+        <td>R$ {{ trade.preco_saida }}</td>
+        <td>
+          {% if trade.lucro_reais is not None %}
+            R$ {{ trade.lucro_reais|floatformat:2 }}
+          {% else %}
+            -
+          {% endif %}
+        </td>
+        <td>
+          {% if trade.lucro_percentual is not None %}
+            {{ trade.lucro_percentual|floatformat:2 }}%
+          {% else %}
+            -
+          {% endif %}
+        </td>
+        <td>{% if trade.pts is not None %}{{ trade.pts|floatformat:2 }}{% endif %}</td>
+        <td>{{ trade.status }}</td>
+        <td>
+          {% if trade.descricao %}
+            <a href="#" data-bs-toggle="modal" data-bs-target="#descModal{{ trade.id }}">
+              {{ trade.descricao|truncatechars:10 }}
+            </a>
+            <!-- Modal -->
+            <div class="modal fade" id="descModal{{ trade.id }}" tabindex="-1" aria-labelledby="descModalLabel{{ trade.id }}" aria-hidden="true">
+              <div class="modal-dialog">
+                <div class="modal-content">
+                  <div class="modal-header">
+                    <h5 class="modal-title" id="descModalLabel{{ trade.id }}">Descrição Completa</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                  </div>
+                  <div class="modal-body">
+                    {{ trade.descricao }}
+                  </div>
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          {% else %}-{% endif %}
+        </td>
+        <td class="text-center">
+          <div style="display: flex; gap: 2px; justify-content: center; align-items: center;">
+            <a href="/trades/editar/{{ trade.id }}/" class="btn btn-xs btn-outline-primary px-1 py-0" style="font-size:0.85rem;" title="Editar">
+              <i class="fa fa-pencil fa-xs"></i>
+            </a>
+            <a href="/trades/deletar/{{ trade.id }}/" class="btn btn-xs btn-outline-danger px-1 py-0" style="font-size:0.85rem;" title="Excluir" onclick="return confirm('Deseja realmente deletar este trade?')">
+              <i class="fa fa-trash fa-xs"></i>
+            </a>
+          </div>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="14" class="text-center">Nenhum trade cadastrado ainda.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</form>
+<script>
+  document.getElementById('selectAll').addEventListener('change', function() {
+    var checkboxes = document.querySelectorAll('input[name="selected_trades"]');
+    for (var checkbox of checkboxes) {
+      checkbox.checked = this.checked;
+    }
+  });
+</script>
+{% endblock %} 

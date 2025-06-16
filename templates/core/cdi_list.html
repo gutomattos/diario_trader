@@ -1,0 +1,31 @@
+{% extends 'core/base.html' %}
+{% block title %}CDI | Diário do Trader{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3>Rentabilidade CDI</h3>
+  <a href="/cdi/novo/" class="btn btn-primary">Novo Registro</a>
+</div>
+<table class="table table-striped table-bordered">
+  <thead class="table-primary">
+    <tr>
+      <th>Mês/Ano</th>
+      <th>Rentabilidade (%)</th>
+      <th style="width:120px;">Ações</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for cdi in cdis %}
+    <tr>
+      <td>{{ cdi.mes_ano }}</td>
+      <td>{{ cdi.rentabilidade|floatformat:2 }}%</td>
+      <td>
+        <a href="/cdi/{{ cdi.id }}/editar/" class="btn btn-sm btn-primary">Editar</a>
+        <a href="/cdi/{{ cdi.id }}/deletar/" class="btn btn-sm btn-danger" onclick="return confirm('Tem certeza que deseja deletar este registro?');">Deletar</a>
+      </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="2" class="text-center">Nenhum registro de CDI ainda.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %} 

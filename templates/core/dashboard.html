@@ -1,0 +1,399 @@
+{% extends 'core/base.html' %}
+{% block title %}Dashboard | Diário do Trader{% endblock %}
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  body {
+    background: #e0e3e8 !important;
+  }
+  .dashboard-card {
+    background: linear-gradient(135deg, #1976d2 60%, #42a5f5 100%);
+    color: #fff;
+    box-shadow: 0 4px 24px 0 rgba(25, 118, 210, 0.18), 0 1.5px 6px 0 rgba(0,0,0,0.08);
+    border: none;
+  }
+  .dashboard-card .card-header {
+    background: transparent;
+    border-bottom: none;
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: #e3eafc;
+    letter-spacing: 0.5px;
+  }
+  .dashboard-card .card-body h4, .dashboard-card .card-body {
+    color: #fff;
+  }
+  .dashboard-card input, .dashboard-card button {
+    color: #1976d2;
+  }
+  .dashboard-card input {
+    background: #e3eafc;
+    border: none;
+  }
+  .dashboard-card button {
+    background: #fff;
+    border: none;
+    color: #1976d2;
+    font-weight: 600;
+  }
+</style>
+{% endblock %}
+{% block content %}
+
+<h3 class="mb-4">Dashboard</h3>
+
+<!-- Indicadores principais -->
+<div class="row mb-4">
+  <div class="col-md-3">
+    <div class="card text-center dashboard-card">
+      <div class="card-header">Acerto Total</div>
+      <div class="card-body"><h4>{% if percentual_acerto is not None %}{{ percentual_acerto|floatformat:2 }}%{% else %}-{% endif %}</h4></div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-center dashboard-card">
+      <div class="card-header">Payoff Total</div>
+      <div class="card-body"><h4>{% if payoff_total is not None %}{{ payoff_total|floatformat:2 }}{% else %}-{% endif %}</h4></div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-center dashboard-card h-100 d-flex flex-column justify-content-center">
+      <div class="card-header">Patrimônio Inicial</div>
+      <div class="card-body d-flex flex-column align-items-center justify-content-center" style="height:100%">
+        <form method="post" class="d-flex flex-row align-items-center w-100 justify-content-center" style="gap: 0.5rem;">
+          {% csrf_token %}
+          <input type="number" step="0.01" name="patrimonio_inicial" value="{{ patrimonio_inicial }}" class="form-control mb-0" style="max-width:120px;display:inline-block;">
+          <button type="submit" class="btn btn-sm">Salvar</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-center dashboard-card">
+      <div class="card-header">Patrimônio Atual</div>
+      <div class="card-body"><h4>R$ {{ patrimonio_atual|floatformat:2 }}</h4></div>
+    </div>
+  </div>
+</div>
+
+<!-- Cards de indicadores adicionais -->
+<div class="row mb-4">
+  <div class="col-md-4">
+    <div class="card text-center dashboard-card">
+      <div class="card-header">Max Drawdown</div>
+      <div class="card-body"><h4>{% if max_drawdown_percent is not None %}{{ max_drawdown_percent|floatformat:2 }}%{% else %}-{% endif %}</h4></div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card text-center dashboard-card">
+      <div class="card-header">Lucro Acumulado (%)</div>
+      <div class="card-body"><h4>{% if lucro_acumulado_percent is not None %}{{ lucro_acumulado_percent|floatformat:2 }}%{% else %}-{% endif %}</h4></div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card text-center dashboard-card">
+      <div class="card-header">Lucro Acumulado (R$)</div>
+      <div class="card-body"><h4>{% if lucro_acumulado_rs is not None %}R$ {{ lucro_acumulado_rs|floatformat:2 }}{% else %}-{% endif %}</h4></div>
+    </div>
+  </div>
+</div>
+
+<!-- Card com lista de trades não finalizados -->
+<div class="row mb-4">
+  <div class="col-12">
+    <div class="card shadow-sm">
+      <div class="card-header">Trades Não Finalizados</div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-striped table-hover align-middle mb-0">
+            <thead>
+              <tr>
+                <th>Data Início</th>
+                <th>Ativo</th>
+                <th>Quantidade</th>
+                <th>Estratégia</th>
+                <th>Lado</th>
+                <th>Preço Entrada</th>
+                <th>Preço Saída</th>
+                <th>Status</th>
+                <th>Descrição</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for trade in trades_nao_finalizados %}
+              <tr>
+                <td>{{ trade.data_inicio }}</td>
+                <td>{{ trade.ativo }}</td>
+                <td>{{ trade.quant }}</td>
+                <td>{{ trade.estrategia }}</td>
+                <td>{{ trade.lado }}</td>
+                <td>{{ trade.preco_entrada }}</td>
+                <td>{{ trade.preco_saida|default:'-' }}</td>
+                <td>{{ trade.status }}</td>
+                <td>{{ trade.descricao|truncatechars:30 }}</td>
+              </tr>
+              {% empty %}
+              <tr><td colspan="9" class="text-center">Nenhum trade não finalizado encontrado.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Cards de estratégia e payoff por estratégia -->
+<div class="row mb-4">
+  <div class="col-md-6">
+    <div class="card shadow-sm">
+      <div class="card-header">Acerto por Estratégia</div>
+      <div class="card-body">
+        <ul>
+          {% for est, pct in estrategia_acerto.items %}
+            <li><b>{{ est }}</b>: {% if pct is not None %}{{ pct|floatformat:2 }}%{% else %}-{% endif %}</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card shadow-sm">
+      <div class="card-header">Payoff por Estratégia</div>
+      <div class="card-body">
+        <ul>
+          {% for est, po in estrategia_payoff.items %}
+            <li><b>{{ est }}</b>: {% if po is not None %}{{ po|floatformat:2 }}{% else %}-{% endif %}</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Card gráfico de pontos WINFUT e WDOFUT mês a mês -->
+<div class="row mb-4">
+  <div class="col-12">
+    <div class="card shadow-sm">
+      <div class="card-header">Pontos por Mês - WINFUT x WDOFUT</div>
+      <div class="card-body">
+        <canvas id="pontosWinWdoChart"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Gráficos -->
+<div class="row g-4">
+  <div class="col-md-6">
+    <div class="card shadow-sm">
+      <div class="card-header">Estratégias x Lucro</div>
+      <div class="card-body">
+        <canvas id="estrategiaLucroChart"></canvas>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card shadow-sm">
+      <div class="card-header">Ativo x Lucro</div>
+      <div class="card-body">
+        <canvas id="ativoLucroChart"></canvas>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card shadow-sm">
+      <div class="card-header">Resultado por Mês</div>
+      <div class="card-body">
+        <canvas id="resultadoMesChart"></canvas>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card shadow-sm">
+      <div class="card-header">Resultado Acumulado</div>
+      <div class="card-body">
+        <canvas id="acumuladoChart"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Gráfico comparativo Resultado Acumulado (%) x IBOV x CDI (último card) -->
+<div class="row g-4 mt-4">
+  <div class="col-12">
+    <div class="card dashboard-card" style="background: linear-gradient(135deg, #1565c0 60%, #42a5f5 100%);">
+      <div class="card-header">Resultado Acumulado (%) x IBOV x CDI (Mês a mês)</div>
+      <div class="card-body">
+        <canvas id="comparativoLinhaChart"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+var estrategiaLabels = {{ estrategia_labels|safe }};
+var estrategiaData = {{ estrategia_data|safe }};
+var ativoLabels = {{ ativo_labels|safe }};
+var ativoData = {{ ativo_data|safe }};
+var mesLabels = {{ mes_labels|safe }};
+var mesData = {{ mes_data|safe }};
+var acumuladoLabels = {{ acumulado_labels|safe }};
+var acumuladoData = {{ acumulado_data|safe }};
+
+// Estratégias x Lucro
+new Chart(document.getElementById('estrategiaLucroChart'), {
+  type: 'bar',
+  data: {
+    labels: estrategiaLabels,
+    datasets: [{
+      label: 'Lucro (R$)',
+      data: estrategiaData,
+      backgroundColor: estrategiaData.map(function(v) { return v < 0 ? '#e53935' : '#1976d2'; }),
+    }]
+  },
+  options: {responsive: true}
+});
+// Ativo x Lucro
+new Chart(document.getElementById('ativoLucroChart'), {
+  type: 'bar',
+  data: {
+    labels: ativoLabels,
+    datasets: [{
+      label: 'Lucro (R$)',
+      data: ativoData,
+      backgroundColor: ativoData.map(function(v) { return v < 0 ? '#e53935' : '#1565c0'; }),
+    }]
+  },
+  options: {responsive: true}
+});
+// Resultado por mês
+new Chart(document.getElementById('resultadoMesChart'), {
+  type: 'line',
+  data: {
+    labels: mesLabels,
+    datasets: [{
+      label: 'Lucro (R$)',
+      data: mesData,
+      borderColor: '#1976d2',
+      backgroundColor: 'rgba(25, 118, 210, 0.1)',
+      fill: true,
+      tension: 0.3
+    }]
+  },
+  options: {responsive: true}
+});
+// Acumulado
+new Chart(document.getElementById('acumuladoChart'), {
+  type: 'line',
+  data: {
+    labels: acumuladoLabels,
+    datasets: [
+      {
+        label: 'Acumulado',
+        data: acumuladoData,
+        borderColor: '#1976d2',
+        backgroundColor: 'rgba(25, 118, 210, 0.1)',
+        fill: false,
+        tension: 0.3
+      }
+    ]
+  },
+  options: {responsive: true}
+});
+
+var comparativoLabels = {{ acumulado_labels|safe }};
+var comparativoUsuario = [];
+var comparativoIBOV = [];
+var comparativoCDI = [];
+try {
+  comparativoUsuario = {{ acumulado_data|safe }}.map(function(v, i) {
+    var inicial = {{ patrimonio_inicial|default:0 }};
+    return inicial ? ((inicial + v) / inicial - 1) * 100 : 0;
+  });
+  comparativoIBOV = {{ ibov_data|safe }};
+  comparativoCDI = {{ cdi_data|safe }};
+} catch(e) {}
+new Chart(document.getElementById('comparativoLinhaChart'), {
+  type: 'line',
+  data: {
+    labels: comparativoLabels,
+    datasets: [
+      {
+        label: 'Você',
+        data: comparativoUsuario,
+        borderColor: '#fff',
+        backgroundColor: 'rgba(255,255,255,0.1)',
+        fill: false,
+        tension: 0.3,
+        pointBackgroundColor: '#fff',
+        pointBorderColor: '#fff',
+      },
+      {
+        label: 'IBOV',
+        data: comparativoIBOV,
+        borderColor: '#222',
+        backgroundColor: 'rgba(0,0,0,0.1)',
+        fill: false,
+        borderDash: [5,5],
+        tension: 0.3,
+        pointBackgroundColor: '#222',
+        pointBorderColor: '#222',
+      },
+      {
+        label: 'CDI',
+        data: comparativoCDI,
+        borderColor: '#90caf9',
+        backgroundColor: 'rgba(144,202,249,0.1)',
+        fill: false,
+        borderDash: [2,2],
+        tension: 0.3,
+        pointBackgroundColor: '#90caf9',
+        pointBorderColor: '#90caf9',
+      }
+    ]
+  },
+  options: {responsive: true, plugins: {legend: {labels: {color: '#fff'}}}, scales: {x: {ticks: {color: '#fff'}}, y: {ticks: {color: '#fff'}}}}
+});
+
+// Gráfico de Pontos WINFUT x WDOFUT
+var pontosMesesLabels = {{ pontos_meses_labels|safe }};
+var pontosWinData = {{ pontos_win_data|safe }};
+var pontosWdoData = {{ pontos_wdo_data|safe }};
+new Chart(document.getElementById('pontosWinWdoChart'), {
+  type: 'line',
+  data: {
+    labels: pontosMesesLabels,
+    datasets: [
+      {
+        label: 'WINFUT',
+        data: pontosWinData,
+        borderColor: '#1976d2',
+        backgroundColor: 'rgba(25, 118, 210, 0.1)',
+        fill: false,
+        tension: 0.3,
+        pointBackgroundColor: '#1976d2',
+        pointBorderColor: '#1976d2',
+      },
+      {
+        label: 'WDOFUT',
+        data: pontosWdoData,
+        borderColor: '#43a047',
+        backgroundColor: 'rgba(67, 160, 71, 0.1)',
+        fill: false,
+        tension: 0.3,
+        pointBackgroundColor: '#43a047',
+        pointBorderColor: '#43a047',
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    plugins: {legend: {labels: {color: '#222'}}},
+    scales: {x: {ticks: {color: '#222'}}, y: {ticks: {color: '#222'}}}
+  }
+});
+</script>
+{% endblock %} 

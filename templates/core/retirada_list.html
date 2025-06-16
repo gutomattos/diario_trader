@@ -1,0 +1,32 @@
+{% extends "core/base.html" %}
+{% block content %}
+<h3 class="mb-4">Retiradas</h3>
+<a href="{% url 'retirada_create' %}" class="btn btn-primary mb-3">Nova Retirada</a>
+<div class="card">
+  <div class="card-body">
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th>Data</th>
+          <th>Valor</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for retirada in retiradas %}
+        <tr>
+          <td>{{ retirada.data|date:'d/m/Y' }}</td>
+          <td>R$ {{ retirada.valor }}</td>
+          <td>
+            <a href="{% url 'retirada_edit' retirada.id %}" class="btn btn-sm btn-warning">Editar</a>
+            <a href="{% url 'retirada_delete' retirada.id %}" class="btn btn-sm btn-danger">Excluir</a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="2" class="text-center">Nenhuma retirada cadastrada.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %} 

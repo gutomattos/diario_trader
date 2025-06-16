@@ -1,0 +1,69 @@
+{% extends 'core/base.html' %}
+{% block title %}{% if editando %}Editar Trade{% else %}Novo Trade{% endif %} | Diário do Trader{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-8">
+    <div class="card shadow">
+      <div class="card-header">
+        <h4>{% if editando %}Editar Trade{% else %}Novo Trade{% endif %}</h4>
+      </div>
+      <div class="card-body">
+        <form method="post">
+          {% csrf_token %}
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label>Data Início</label>
+              <input type="date" name="data_inicio" class="form-control" required value="{{ trade.data_inicio|date:'Y-m-d' }}">
+            </div>
+            <div class="col-md-6">
+              <label>Data Fim</label>
+              <input type="date" name="data_fim" class="form-control" value="{{ trade.data_fim|date:'Y-m-d' }}">
+            </div>
+            <div class="col-md-4">
+              <label>Ativo</label>
+              <input type="text" name="ativo" class="form-control" required value="{{ trade.ativo }}">
+            </div>
+            <div class="col-md-4">
+              <label>Quantidade</label>
+              <input type="number" name="quant" class="form-control" required value="{{ trade.quant }}">
+            </div>
+            <div class="col-md-4">
+              <label>Estratégia</label>
+              <select name="estrategia" class="form-select" required>
+                <option value="">Selecione</option>
+                {% for est in estrategias %}
+                  <option value="{{ est.nome }}" {% if trade.estrategia.nome == est.nome %}selected{% endif %}>{{ est.nome }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label>Lado</label>
+              <select name="lado" class="form-select" required>
+                <option value="">Selecione</option>
+                <option value="COMPRA" {% if trade.lado == 'COMPRA' %}selected{% endif %}>Compra</option>
+                <option value="VENDA" {% if trade.lado == 'VENDA' %}selected{% endif %}>Venda</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label>Preço Entrada (R$)</label>
+              <input type="number" step="0.01" name="preco_entrada" class="form-control" required value="{{ trade.preco_entrada }}">
+            </div>
+            <div class="col-md-4">
+              <label>Preço Saída (R$)</label>
+              <input type="number" step="0.01" name="preco_saida" class="form-control" value="{{ trade.preco_saida }}">
+            </div>
+            <div class="col-md-12">
+              <label>Descrição</label>
+              <textarea name="descricao" class="form-control" rows="3" placeholder="Observações, sentimentos, erros, acertos...">{{ trade.descricao }}</textarea>
+            </div>
+          </div>
+          <div class="mt-4 text-end">
+            <a href="/trades/" class="btn btn-outline-secondary">Cancelar</a>
+            <button type="submit" class="btn btn-primary">Salvar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} 

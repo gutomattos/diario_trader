@@ -1,0 +1,41 @@
+{% extends 'core/base.html' %}
+{% block title %}{{ titulo_dashboard }} | Diário do Trader{% endblock %}
+{% block content %}
+<h3 class="mb-4">{{ titulo_dashboard }}</h3>
+<div class="card shadow-sm p-3 mb-4 bg-white rounded">
+  <div class="table-responsive">
+    <table class="table table-striped table-hover align-middle">
+      <thead>
+        <tr>
+          <th>Data Início</th>
+          <th>Ativo</th>
+          <th>Quantidade</th>
+          <th>Estratégia</th>
+          <th>Lado</th>
+          <th>Preço Entrada</th>
+          <th>Preço Saída</th>
+          <th>Status</th>
+          <th>Descrição</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for trade in trades %}
+        <tr>
+          <td>{{ trade.data_inicio }}</td>
+          <td>{{ trade.ativo }}</td>
+          <td>{{ trade.quant }}</td>
+          <td>{{ trade.estrategia }}</td>
+          <td>{{ trade.lado }}</td>
+          <td>{{ trade.preco_entrada }}</td>
+          <td>{{ trade.preco_saida|default:'-' }}</td>
+          <td>{{ trade.status }}</td>
+          <td>{{ trade.descricao|truncatechars:30 }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="9" class="text-center">Nenhum trade não finalizado encontrado.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %} 

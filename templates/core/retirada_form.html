@@ -1,0 +1,21 @@
+{% extends "core/base.html" %}
+{% block content %}
+{% if editando %}
+<h3 class="mb-4">Editar Retirada</h3>
+{% else %}
+<h3 class="mb-4">Nova Retirada</h3>
+{% endif %}
+<form method="post">
+  {% csrf_token %}
+  <div class="mb-3">
+    <label for="data" class="form-label">Data</label>
+    <input type="date" class="form-control" id="data" name="data" value="{{ retirada.data|date:'Y-m-d' }}" required>
+  </div>
+  <div class="mb-3">
+    <label for="valor" class="form-label">Valor</label>
+    <input type="number" step="0.01" class="form-control" id="valor" name="valor" value="{{ retirada.valor }}" required>
+  </div>
+  <button type="submit" class="btn btn-primary">Salvar</button>
+  <a href="{% url 'retirada_list' %}" class="btn btn-secondary">Cancelar</a>
+</form>
+{% endblock %} 

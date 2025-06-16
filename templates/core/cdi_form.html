@@ -1,0 +1,30 @@
+{% extends 'core/base.html' %}
+{% block title %}Novo CDI | Diário do Trader{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-6">
+    <div class="card shadow">
+      <div class="card-header">
+        <h4>Novo Registro CDI</h4>
+      </div>
+      <div class="card-body">
+        <form method="post">
+          {% csrf_token %}
+          <div class="mb-3">
+            <label>Mês/Ano (ex: 07/2024)</label>
+            <input type="text" name="mes_ano" class="form-control" required placeholder="MM/AAAA" value="{{ cdi.mes_ano|default:'' }}">
+          </div>
+          <div class="mb-3">
+            <label>Rentabilidade (%)</label>
+            <input type="number" step="0.01" name="rentabilidade" class="form-control" required value="{{ cdi.rentabilidade|default:'' }}">
+          </div>
+          <div class="text-end">
+            <a href="/cdi/" class="btn btn-outline-secondary">Cancelar</a>
+            <button type="submit" class="btn btn-primary">Salvar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} 
